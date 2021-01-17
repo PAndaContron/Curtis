@@ -1,12 +1,24 @@
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.filechooser.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.SwingConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Curtis extends JFrame
 {
@@ -32,7 +44,7 @@ public class Curtis extends JFrame
         open.setBorder(BorderFactory.createLineBorder(Color.black));
         open.setPreferredSize(new Dimension(120,40));
 
-        folder = new JButton("Set Folder");
+        folder = new JButton("Select Output Folder");
         folder.setBorder(BorderFactory.createLineBorder(Color.black));
         folder.setPreferredSize(new Dimension(120,40));
 

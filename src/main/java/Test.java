@@ -1,11 +1,18 @@
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 import edu.cmu.sphinx.api.Configuration;
 import edu.cmu.sphinx.api.SpeechResult;
@@ -23,18 +30,31 @@ public class Test {
     
     public static String doTest (String filepath, String filedirec, Curtis curtis) throws IOException
     {
-        FFmpeg ffmpeg = new FFmpeg("./ffmpeg");
-        FFprobe ffprobe = new FFprobe("./ffprobe");
+        FFmpeg ffmpeg;
+        FFprobe ffprobe;
+        
+        ffmpeg = new FFmpeg("win/ffmpeg");
+        ffprobe = new FFprobe("win/ffprobe");
         FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
         
-        Scanner scan = new Scanner(new File("curse.txt"));
-        while (scan.hasNextLine())
-            curses.add(scan.nextLine());
+//        Scanner scan = new Scanner(new File("curse.txt"));
+//        while (scan.hasNextLine())
+//            curses.add(scan.nextLine());
+        
+        try (BufferedReader br =
+        		new BufferedReader(
+        		new InputStreamReader(
+        		new GZIPInputStream(
+        		new FileInputStream("curse.txt.gz"))))) {
+        	while (br.ready()) {
+        		curses.add(br.readLine());
+        	}
+        }
         
         Configuration configuration = new Configuration();
 
         configuration.setAcousticModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us");
-        configuration.setDictionaryPath("resource:/edu/cmu/sphinx/models/en-us/cmudict-en-us.dict");
+        configuration.setDictionaryPath("new.dict");
         configuration.setLanguageModelPath("resource:/edu/cmu/sphinx/models/en-us/en-us.lm.bin");
         configuration.setGrammarPath("file:src");
         configuration.setGrammarName("hello");
@@ -64,6 +84,8 @@ public class Test {
                 .setAudioSampleRate(16000)
                 .done();
         
+        float duration = getDuration(new File(filedirec + "/audio.wav"));
+        
         executor.createJob(builder).run();
         
         //stream will be that new location
@@ -87,9 +109,12 @@ public class Test {
                     
                     //isolate all audio before and after word
                     TimeFrame tf = r.getTimeFrame();
+                    
                     String ts1 = prettyMillis(tf.getStart());
                     String ts2 = prettyMillis(tf.getEnd());
 //                    String duration = prettyMillis(tf.length());
+                    
+//                    curtis.updateBar((int) (tf.getStart() / duration / 10));
                     
                     builder = new FFmpegBuilder()
                             .setInput(filepath)
@@ -159,7 +184,7 @@ public class Test {
         recognizer.stopRecognition();
         new File(filedirec + "/audio.orig.wav").delete();
         
-        scan.close();
+//        scan.close();
         //Runtime.getRuntime().exec("command");
         return "yes";
     }
@@ -168,7 +193,7 @@ public class Test {
     {
         for(int i = 0; i < curses.size(); i++)
         {
-            if (str.contains(curses.get(i)))
+            if (str.equals(curses.get(i).trim()))
                 return true;
         }
         return false;
@@ -188,4 +213,20 @@ public class Test {
         millis -= TimeUnit.SECONDS.toMillis(s);
         return String.format("%02d:%02d:%02d.%03d", h, m, s, millis);
     }
+    
+    private static float getDuration(File file) {
+		AudioInputStream audioInputStream = null;
+		try {
+			audioInputStream = AudioSystem.getAudioInputStream(file);
+		} catch (UnsupportedAudioFileException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		AudioFormat format = audioInputStream.getFormat();
+		long audioFileLength = file.length();
+		int frameSize = format.getFrameSize();
+		float frameRate = format.getFrameRate();
+		float durationInSeconds = (audioFileLength / (frameSize * frameRate));
+		return (durationInSeconds);
+	}
 }
